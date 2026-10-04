@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Urban Brew Cafe</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
+    body { background: #fafafa; color: #333; padding-bottom: 5rem; }
+
+    header { background: #27272a; color: #fff; padding: 1.5rem 2rem; display: flex; justify-content: space-between; align-items: center; }
+    .cart-btn { background: #e11d48; color: #fff; border: none; padding: 0.6rem 1.2rem; border-radius: 20px; font-weight: bold; cursor: pointer; }
+
+    /* Category Filter Buttons */
+    .filter-container { display: flex; justify-content: center; gap: 10px; margin: 2rem 0; flex-wrap: wrap; }
+    .filter-btn { background: #e4e4e7; border: none; padding: 0.6rem 1.2rem; border-radius: 20px; cursor: pointer; font-weight: bold; }
+    .filter-btn.active { background: #27272a; color: #fff; }
+
+    /* Menu Grid */
+    .menu-grid { max-width: 1000px; margin: 0 auto; display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem; padding: 0 1rem; }
+    .menu-card { background: #fff; border: 1px solid #e4e4e7; border-radius: 12px; padding: 1.2rem; display: flex; flex-direction: column; justify-content: space-between; }
+    .menu-card h3 { font-size: 1.2rem; margin-bottom: 0.5rem; }
+    .menu-card p { color: #71717a; font-size: 0.9rem; margin-bottom: 1rem; }
+    .card-footer { display: flex; justify-content: space-between; align-items: center; }
+    .add-btn { background: #27272a; color: #fff; border: none; padding: 0.4rem 0.8rem; border-radius: 6px; cursor: pointer; }
+
+    /* Slide-out Order Cart Drawer */
+    .cart-drawer { position: fixed; top: 0; right: -400px; width: 350px; height: 100%; background: #fff; box-shadow: -5px 0 15px rgba(0,0,0,0.1); padding: 2rem; transition: right 0.3s ease; z-index: 200; display: flex; flex-direction: column; }
+    .cart-drawer.open { right: 0; }
+    .cart-items { flex: 1; overflow-y: auto; margin: 1rem 0; }
+    .cart-item { display: flex; justify-content: space-between; margin-bottom: 1rem; border-bottom: 1px solid #f4f4f5; padding-bottom: 0.5rem; }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h2>Urban Brew Cafe</h2>
+    <button class="cart-btn" onclick="toggleCart()">Bag (<span id="cart-count">0</span>)</button>
+  </header>
+
+  <!-- Filter Category Buttons -->
+  <div class="filter-container">
+    <button class="filter-btn active" onclick="filterMenu('all', this)">All</button>
+    <button class="filter-btn" onclick="filterMenu('drinks', this)">Drinks</button>
+    <button class="filter-btn" onclick="filterMenu('food', this)">Food</button>
+  </div>
+
+  <!-- Menu Grid -->
+  <div class="menu-grid">
+    <div class="menu-card" data-category="drinks">
+      <div>
+        <h3>Iced Spanish Latte</h3>
+        <p>Espresso with condensed milk and chilled dairy.</p>
+      </div>
+      <div class="card-footer">
+        <strong>$4.50</strong>
+        <button class="add-btn" onclick="addToCart('Iced Spanish Latte', 4.50)">+ Add</button>
+      </div>
+    </div>
+
+    <div class="menu-card" data-category="food">
+      <div>
+        <h3>Avocado Toast</h3>
+        <p>Sourdough bread topped with fresh avocado & seeds.</p>
+      </div>
+      <div class="card-footer">
+        <strong>$7.00</strong>
+        <button class="add-btn" onclick="addToCart('Avocado Toast', 7.00)">+ Add</button>
+      </div>
+    </div>
+
+    <div class="menu-card" data-category="drinks">
+      <div>
+        <h3>Matcha Green Tea</h3>
+        <p>Ceremonial grade matcha whisked with oat milk.</p>
+      </div>
+      <div class="card-footer">
+        <strong>$5.00</strong>
+        <button class="add-btn" onclick="addToCart('Matcha Green Tea', 5.00)">+ Add</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Side Cart Drawer -->
+  <div class="cart-drawer" id="cart-drawer">
+    <h2>Your Order</h2>
+    <div class="cart-items" id="cart-items">
+      <p style="color: #a1a1aa;">Your order bag is empty.</p>
+    </div>
+    <h3>Total: <span id="cart-total">$0.00</span></h3>
+    <button class="cart-btn" style="width: 100%; margin-top: 1rem;" onclick="toggleCart()">Close</button>
+  </div>
+
+  <script>
+    let cart = [];
+
+    // Filter Menu Items by Category
+    function filterMenu(category, element) {
+      document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+      element.classList.add('active');
+
+      document.querySelectorAll('.menu-card').forEach(card => {
+        if (category === 'all' || card.dataset.category === category) {
+          card.style.display = 'flex';
+        } else {
+          card.style.display = 'none';
+        }
+      });
+    }
+
+    // Cart Management
+    function addToCart(name, price) {
+      cart.push({ name, price });
+      updateCartUI();
+    }
+
+    function updateCartUI() {
+      document.getElementById('cart-count').textContent = cart.length;
+      const cartItemsContainer = document.getElementById('cart-items');
+      
+      if (cart.length === 0) {
+        cartItemsContainer.innerHTML = '<p style="color: #a1a1aa;">Your order bag is empty.</p>';
+        document.getElementById('cart-total').textContent = '$0.00';
+        return;
+      }
+
+      let total = 0;
+      cartItemsContainer.innerHTML = '';
+      cart.forEach(item => {
+        total += item.price;
+        const div = document.createElement('div');
+        div.className = 'cart-item';
+        div.innerHTML = `<span>${item.name}</span><strong>$${item.price.toFixed(2)}</strong>`;
+        cartItemsContainer.appendChild(div);
+      });
+
+      document.getElementById('cart-total').textContent = `$${total.toFixed(2)}`;
+    }
+
+    function toggleCart() {
+      document.getElementById('cart-drawer').classList.toggle('open');
+    }
+  </script>
+</body>
+</html>
